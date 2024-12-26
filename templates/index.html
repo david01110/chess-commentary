@@ -190,10 +190,7 @@
                 <div class="right-panel">
                     <div class="move-list" id="move-list"></div>
                     <div class="comment-section">
-                        <div id="comment-display" class="comment-box">
-                            <div id="evaluation-display" class="evaluation"></div>
-                            <div id="comment-text"></div>
-                        </div>
+                        <div id="comment-box" class="comment-box"></div>
                     </div>
                 </div>
             </div>
@@ -315,14 +312,23 @@
         let currentGameIndex = 0;
         function selectGame(index) {
             currentGameIndex = index;
-            const game = allGames[index];
-            currentBroadcastGame = game;
-            currentGameId = game.id;
-            moves = game.moves;
+            const selectedGame = allGames[index];
+            currentBroadcastGame = selectedGame;
+            currentGameId = selectedGame.id;
+            
+            // Chess.js neu initialisieren
+            game = new Chess();
+            // Züge in der richtigen Reihenfolge speichern
+            moves = [];
+            for (const move of currentBroadcastGame.moves) {
+                moves.push(move);
+                game.move(move);
+            }
+            game.reset();
             
             // UI aktualisieren
             document.getElementById('player-info').innerHTML = 
-                `<strong>Weiß:</strong> ${game.white} vs <strong>Schwarz:</strong> ${game.black} (${game.result})`;
+                `<strong>Weiß:</strong> ${currentBroadcastGame.white} vs <strong>Schwarz:</strong> ${currentBroadcastGame.black} (${currentBroadcastGame.result})`;
             
             updateGameSelector();
             updateMoveList();
@@ -334,13 +340,10 @@
             const moveList = document.getElementById('move-list');
             moveList.innerHTML = '';
             
-            // Erstelle eine Kopie der Züge, damit wir sie nicht verändern
-            const displayMoves = [...moves];
-            
-            for (let i = 0; i < displayMoves.length; i += 2) {
+            for (let i = 0; i < moves.length; i += 2) {
                 const moveNumber = Math.floor(i / 2) + 1;
-                const whiteMove = displayMoves[i];
-                const blackMove = displayMoves[i + 1];
+                const whiteMove = moves[i];
+                const blackMove = moves[i + 1];
                 
                 const moveRow = document.createElement('div');
                 moveRow.className = 'move-row';
@@ -370,12 +373,13 @@
                     fetch(`/get-comment?game_id=${currentGameId}&move_number=${i}`).then(r => r.json()),
                     blackMove ? fetch(`/get-comment?game_id=${currentGameId}&move_number=${i+1}`).then(r => r.json()) : Promise.resolve({})
                 ]).then(([whiteData, blackData]) => {
-                    // Setze die Züge direkt mit den ursprünglichen Werten
+                    // Weißen Zug mit Annotation und Bewertung
                     whiteMoveSpan.textContent = whiteMove + 
                         (whiteData.comment?.annotation || '') +
                         (whiteData.comment?.evaluation || '');
                     whiteMoveSpan.onclick = () => makeMove(i);
 
+                    // Schwarzen Zug mit Annotation und Bewertung
                     if (blackMove) {
                         blackMoveSpan.textContent = blackMove + 
                             (blackData.comment?.annotation || '') +
@@ -436,22 +440,20 @@
         }
 
         function loadComments() {
-            if (!currentGameId || currentMoveIndex < 0) return;
-
-            fetch(`/get-comment?game_id=${currentGameId}&move_number=${currentMoveIndex}`)
-                .then(response => response.json())
-                .then(data => {
-                    if (data.comment) {
-                        document.getElementById('evaluation-display').textContent = data.comment.evaluation || '';
-                        document.getElementById('comment-text').textContent = data.comment.text || '';
-                    } else {
-                        document.getElementById('evaluation-display').textContent = '';
-                        document.getElementById('comment-text').textContent = '';
-                    }
-                })
-                .catch(error => {
-                    console.error('Error loading comments:', error);
-                });
+            const commentBox = document.getElementById('comment-box');
+            if (currentMoveIndex >= 0 && currentGameId) {
+                fetch(`/get-comment?game_id=${currentGameId}&move_number=${currentMoveIndex}`)
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.comment && data.comment.text) {
+                            commentBox.textContent = data.comment.text;
+                        } else {
+                            commentBox.textContent = 'Kein Kommentar für diesen Zug.';
+                        }
+                    });
+            } else {
+                commentBox.textContent = '';
+            }
         }
     </script>
 </body>
