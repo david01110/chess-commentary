@@ -16,9 +16,11 @@
             margin-right: 10px;
             color: #666;
             width: 30px;
+            flex-shrink: 0;
         }
         .move-container {
-            display: flex;
+            display: grid;
+            grid-template-columns: minmax(80px, auto) minmax(80px, auto);
             gap: 20px;
             flex: 1;
         }
@@ -27,10 +29,10 @@
             padding: 2px 5px;
         }
         .white-move {
-            min-width: 60px;
+            justify-self: start;
         }
         .black-move {
-            min-width: 60px;
+            justify-self: start;
         }
         .move:hover { 
             background-color: #eee;
@@ -326,47 +328,52 @@
             const moveList = document.getElementById('move-list');
             moveList.innerHTML = '';
             
-            for (let i = 0; i < moves.length; i += 2) {
+            // Erstelle eine Kopie der Züge, damit wir sie nicht verändern
+            const displayMoves = [...moves];
+            
+            for (let i = 0; i < displayMoves.length; i += 2) {
                 const moveNumber = Math.floor(i / 2) + 1;
-                const whiteMove = moves[i];
-                const blackMove = moves[i + 1];
+                const whiteMove = displayMoves[i];
+                const blackMove = displayMoves[i + 1];
                 
                 const moveRow = document.createElement('div');
                 moveRow.className = 'move-row';
                 
-                // Zugnummer
                 const moveNumberSpan = document.createElement('span');
                 moveNumberSpan.className = 'move-number';
                 moveNumberSpan.textContent = moveNumber + '.';
                 moveRow.appendChild(moveNumberSpan);
 
-                // Container für die Züge (fixierte Breite)
+                // Container für die Züge (mit Grid)
                 const moveContainer = document.createElement('div');
                 moveContainer.className = 'move-container';
                 moveRow.appendChild(moveContainer);
 
-                // Weißer Zug (links)
+                // Weißer Zug (links fixiert)
                 const whiteMoveSpan = document.createElement('span');
                 whiteMoveSpan.className = `move white-move ${i === currentMoveIndex ? 'current-move' : ''}`;
                 moveContainer.appendChild(whiteMoveSpan);
                 
-                // Schwarzer Zug (rechts)
+                // Schwarzer Zug (rechts fixiert)
                 const blackMoveSpan = document.createElement('span');
                 blackMoveSpan.className = `move black-move ${i + 1 === currentMoveIndex ? 'current-move' : ''}`;
                 moveContainer.appendChild(blackMoveSpan);
 
-                // Lade Annotationen für beide Züge
+                // Lade Annotationen und Bewertung für beide Züge
                 Promise.all([
                     fetch(`/get-comment?game_id=${currentGameId}&move_number=${i}`).then(r => r.json()),
                     blackMove ? fetch(`/get-comment?game_id=${currentGameId}&move_number=${i+1}`).then(r => r.json()) : Promise.resolve({})
                 ]).then(([whiteData, blackData]) => {
-                    // Weißen Zug setzen
-                    whiteMoveSpan.textContent = whiteMove + (whiteData.comment?.annotation || '');
+                    // Setze die Züge direkt mit den ursprünglichen Werten
+                    whiteMoveSpan.textContent = whiteMove + 
+                        (whiteData.comment?.annotation || '') +
+                        (whiteData.comment?.evaluation || '');
                     whiteMoveSpan.onclick = () => makeMove(i);
 
-                    // Schwarzen Zug setzen (wenn vorhanden)
                     if (blackMove) {
-                        blackMoveSpan.textContent = blackMove + (blackData.comment?.annotation || '');
+                        blackMoveSpan.textContent = blackMove + 
+                            (blackData.comment?.annotation || '') +
+                            (blackData.comment?.evaluation || '');
                         blackMoveSpan.onclick = () => makeMove(i + 1);
                     }
                 });
