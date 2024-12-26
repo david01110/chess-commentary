@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Schach Kommentator</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/chessboard-js/1.0.0/chessboard-1.0.0.min.css">
+    <link rel="stylesheet" href="https://unpkg.com/@chrisoakman/chessboardjs@1.0.0/dist/chessboard-1.0.0.min.css">
     <style>
         .move-row { margin-bottom: 5px; }
         .move-number { margin-right: 10px; color: #666; }
@@ -32,11 +32,11 @@
             margin: 0 auto;
         }
         .move-list {
-            height: 400px; /* Angepasst an Bretthöhe */
+            height: 400px;
             overflow-y: auto;
             border: 1px solid #ddd;
             padding: 10px;
-            margin-top: 0; /* Entfernt den oberen Abstand */
+            margin-top: 0;
             background: white;
         }
         .board-container {
@@ -54,26 +54,6 @@
             padding: 10px;
             background: #f8f9fa;
             border-radius: 5px;
-        }
-        .import-form {
-            max-width: 600px;
-            margin: 0 auto 20px;
-        }
-        .right-panel {
-            display: flex;
-            flex-direction: column;
-            height: 500px; /* Angepasst an Bretthöhe */
-        }
-        .comment-section {
-            flex: 1;
-            margin-top: 10px;
-            display: flex;
-            flex-direction: column;
-        }
-        .comment-box {
-            flex: 1;
-            margin: 0;
-            overflow-y: auto;
         }
         .game-selector {
             margin-top: 20px;
@@ -139,61 +119,10 @@
             color: white;
             border-color: #0056b3;
         }
-        .page-info {
-            color: #6c757d;
-            font-size: 0.9em;
-            margin: 0 10px;
-        }
-        .host-panel {
-            margin-top: 20px;
-            padding: 15px;
-            background: #f8f9fa;
-            border-radius: 5px;
-            border-top: 1px solid #dee2e6;
-        }
-        .host-controls {
-            display: flex;
-            gap: 10px;
-            margin-bottom: 10px;
-            align-items: center;
-        }
-        .evaluation-input {
-            width: 80px;
+        .broadcast-info {
             text-align: center;
-            padding: 5px;
-            border: 1px solid #ced4da;
-            border-radius: 4px;
-        }
-        .comment-input {
-            width: 100%;
-            min-height: 100px;
-            margin: 10px 0;
-            padding: 8px;
-            border: 1px solid #ced4da;
-            border-radius: 4px;
-            resize: vertical;
-        }
-        .save-button {
-            background: #28a745;
-            color: white;
-            border: none;
-            padding: 8px 15px;
-            border-radius: 4px;
-            cursor: pointer;
-            transition: all 0.2s;
-            margin-left: auto;
-        }
-        .save-button:hover {
-            background: #218838;
-        }
-        .save-button:disabled {
-            background: #6c757d;
-            cursor: not-allowed;
-        }
-        .host-status {
-            color: #6c757d;
-            font-size: 0.9em;
-            margin-top: 5px;
+            margin-bottom: 20px;
+            color: #666;
         }
     </style>
 </head>
@@ -201,13 +130,8 @@
     <div class="container mt-4">
         <h1 class="text-center mb-4">Schach Kommentator</h1>
         
-        <!-- Import-Formular -->
-        <div class="import-form">
-            <div class="input-group">
-                <input type="text" id="game-id" class="form-control" placeholder="Lichess Broadcast-URL eingeben">
-                <button class="btn btn-primary" onclick="loadBroadcast()">Broadcast laden</button>
-            </div>
-        </div>
+        <!-- Broadcast Info -->
+        <div id="broadcast-info" class="broadcast-info"></div>
 
         <!-- Spieler-Info -->
         <div class="game-header">
@@ -228,7 +152,7 @@
                 </div>
             </div>
             
-            <!-- Zugliste und Kommentare -->
+            <!-- Zugliste und Kommentare (nur Anzeige) -->
             <div class="col-md-4">
                 <div class="right-panel">
                     <div class="move-list" id="move-list"></div>
@@ -244,30 +168,16 @@
 
         <!-- Spielauswahl am Ende -->
         <div class="game-selector" id="game-selector"></div>
-
-        <!-- Host Interface -->
-        <div class="host-panel" id="host-panel" style="display: none;">
-            <div class="host-controls">
-                <div>
-                    <label for="evaluation-input">Bewertung:</label>
-                    <input type="text" id="evaluation-input" class="evaluation-input" placeholder="+0.5">
-                </div>
-                <button class="save-button" onclick="saveComment()">Speichern</button>
-            </div>
-            <textarea id="comment-input" class="comment-input" placeholder="Kommentar eingeben..."></textarea>
-            <div id="host-status" class="host-status"></div>
-        </div>
     </div>
 
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://unpkg.com/@chrisoakman/chessboardjs@1.0.0/dist/chessboard-1.0.0.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/chess.js/0.10.3/chess.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/chessboard-js/1.0.0/chessboard-1.0.0.min.js"></script>
     <script>
         let board = null;
         let game = new Chess();
         let currentMoveIndex = -1;
         let moves = [];
-        let currentBroadcastId = null;
         let currentGameId = null;
         let currentBroadcastGame = null;
         let allGames = [];
@@ -279,6 +189,59 @@
             position: 'start',
             pieceTheme: 'https://chessboardjs.com/img/chesspieces/wikipedia/{piece}.png'
         });
+
+        // Lade den aktuellen Broadcast beim Start
+        fetch('/get-current-broadcast')
+            .then(response => response.json())
+            .then(data => {
+                if (data.broadcast_id) {
+                    document.getElementById('broadcast-info').textContent = 
+                        'Aktiver Broadcast: ' + data.broadcast_id;
+                    loadBroadcastById(data.broadcast_id);
+                } else {
+                    document.getElementById('broadcast-info').textContent = 
+                        'Kein aktiver Broadcast verfügbar';
+                }
+            })
+            .catch(error => console.error('Error loading current broadcast:', error));
+
+        function loadBroadcastById(broadcastId) {
+            fetch('/import-broadcast', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ broadcast_round_id: broadcastId })
+            })
+            .then(handleBroadcastResponse)
+            .catch(handleBroadcastError);
+        }
+
+        function handleBroadcastResponse(response) {
+            if (!response.ok) {
+                throw new Error('Netzwerk-Antwort war nicht ok');
+            }
+            return response.json().then(data => {
+                if (data.error) {
+                    throw new Error(data.error);
+                }
+                
+                if (!data.broadcast || !data.broadcast.games || data.broadcast.games.length === 0) {
+                    throw new Error('Keine Partien im Broadcast gefunden');
+                }
+                
+                allGames = data.broadcast.games;
+                updateGameSelector();
+                
+                // Lade die erste Partie
+                selectGame(0);
+            });
+        }
+
+        function handleBroadcastError(error) {
+            console.error('Error:', error);
+            document.getElementById('player-info').innerHTML = `Fehler: ${error.message}`;
+        }
 
         function updateGameSelector() {
             const gameSelector = document.getElementById('game-selector');
@@ -316,53 +279,6 @@
             }
         }
 
-        function loadBroadcast() {
-            const url = document.getElementById('game-id').value.trim();
-            if (!url) {
-                alert('Bitte geben Sie eine Broadcast-URL ein');
-                return;
-            }
-
-            // Zeige Ladestatus
-            document.getElementById('player-info').innerHTML = 'Lade Broadcast...';
-            document.getElementById('game-selector').innerHTML = '';
-            currentPage = 0;
-
-            fetch('/import-broadcast', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({ broadcast_round_id: url })
-            })
-            .then(response => {
-                if (!response.ok) {
-                    throw new Error('Netzwerk-Antwort war nicht ok');
-                }
-                return response.json();
-            })
-            .then(data => {
-                if (data.error) {
-                    throw new Error(data.error);
-                }
-                
-                if (!data.broadcast || !data.broadcast.games || data.broadcast.games.length === 0) {
-                    throw new Error('Keine Partien im Broadcast gefunden');
-                }
-                
-                allGames = data.broadcast.games;
-                updateGameSelector();
-                
-                // Lade die erste Partie oder die ausgewählte Partie
-                selectGame(0);
-            })
-            .catch(error => {
-                console.error('Error:', error);
-                document.getElementById('player-info').innerHTML = `Fehler: ${error.message}`;
-                alert(error.message || 'Fehler beim Laden des Broadcasts');
-            });
-        }
-
         let currentGameIndex = 0;
         function selectGame(index) {
             currentGameIndex = index;
@@ -385,163 +301,82 @@
             const moveList = document.getElementById('move-list');
             moveList.innerHTML = '';
             
-            if (!moves || moves.length === 0) {
-                moveList.innerHTML = '<div class="text-muted">Keine Züge vorhanden</div>';
-                return;
+            for (let i = 0; i < moves.length; i += 2) {
+                const moveNumber = Math.floor(i / 2) + 1;
+                const whiteMove = moves[i];
+                const blackMove = moves[i + 1];
+                
+                const moveRow = document.createElement('div');
+                moveRow.className = 'move-row';
+                
+                const moveNumberSpan = document.createElement('span');
+                moveNumberSpan.className = 'move-number';
+                moveNumberSpan.textContent = moveNumber + '.';
+                moveRow.appendChild(moveNumberSpan);
+                
+                const whiteMoveSpan = document.createElement('span');
+                whiteMoveSpan.className = `move ${i === currentMoveIndex ? 'current-move' : ''}`;
+                whiteMoveSpan.textContent = whiteMove;
+                whiteMoveSpan.onclick = () => makeMove(i);
+                moveRow.appendChild(whiteMoveSpan);
+                
+                if (blackMove) {
+                    const blackMoveSpan = document.createElement('span');
+                    blackMoveSpan.className = `move ${i + 1 === currentMoveIndex ? 'current-move' : ''}`;
+                    blackMoveSpan.textContent = blackMove;
+                    blackMoveSpan.onclick = () => makeMove(i + 1);
+                    moveRow.appendChild(blackMoveSpan);
+                }
+                
+                moveList.appendChild(moveRow);
             }
             
-            for (let i = 0; i < moves.length; i++) {
-                const moveNumber = Math.floor(i / 2) + 1;
-                const isWhiteMove = i % 2 === 0;
-                
-                if (isWhiteMove) {
-                    const row = document.createElement('div');
-                    row.className = 'move-row';
-                    
-                    const whiteTime = currentBroadcastGame.times[i] ? 
-                        `<span class="move-time">[${currentBroadcastGame.times[i]}]</span>` : '';
-                    
-                    const blackTime = (i + 1 < currentBroadcastGame.times.length && currentBroadcastGame.times[i + 1]) ? 
-                        `<span class="move-time">[${currentBroadcastGame.times[i + 1]}]</span>` : '';
-                    
-                    row.innerHTML = `
-                        <span class="move-number">${moveNumber}.</span>
-                        <span class="move white-move" data-move="${i}">${moves[i]}</span>${whiteTime}
-                        ${i + 1 < moves.length ? `<span class="move black-move" data-move="${i + 1}">${moves[i + 1]}</span>${blackTime}` : ''}
-                    `;
-                    moveList.appendChild(row);
-                    
-                    const whiteMoveSpan = row.querySelector(`.move[data-move="${i}"]`);
-                    whiteMoveSpan.onclick = () => selectMove(i);
-                    
-                    if (i + 1 < moves.length) {
-                        const blackMoveSpan = row.querySelector(`.move[data-move="${i + 1}"]`);
-                        blackMoveSpan.onclick = () => selectMove(i + 1);
-                    }
-                }
+            // Scroll zum aktuellen Zug
+            const currentMove = moveList.querySelector('.current-move');
+            if (currentMove) {
+                currentMove.scrollIntoView({ behavior: 'smooth', block: 'center' });
             }
         }
 
-        function selectMove(index) {
-            currentMoveIndex = index;
-            game.reset();
+        function makeMove(index) {
+            if (index < -1 || index >= moves.length) return;
             
+            // Reset bis zum Anfang
+            game.reset();
+            board.position(game.fen());
+            
+            // Spiele alle Züge bis zum gewählten Index
             for (let i = 0; i <= index; i++) {
                 game.move(moves[i]);
             }
             
             board.position(game.fen());
-            
-            document.querySelectorAll('.move').forEach(move => {
-                move.classList.remove('current-move');
-            });
-            
-            const currentMove = document.querySelector(`.move[data-move="${index}"]`);
-            if (currentMove) {
-                currentMove.classList.add('current-move');
-                currentMove.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-            }
-            
+            currentMoveIndex = index;
+            updateMoveList();
             loadComments();
+        }
+
+        function moveFirst() {
+            makeMove(-1);
+        }
+
+        function movePrev() {
+            makeMove(currentMoveIndex - 1);
+        }
+
+        function moveNext() {
+            makeMove(currentMoveIndex + 1);
+        }
+
+        function moveLast() {
+            makeMove(moves.length - 1);
         }
 
         function resetPosition() {
             game.reset();
-            board.position('start');
+            board.position(game.fen());
             currentMoveIndex = -1;
-            loadComments();
-        }
-
-        function moveNext() {
-            if (currentMoveIndex < moves.length - 1) {
-                selectMove(currentMoveIndex + 1);
-            }
-        }
-
-        function movePrev() {
-            if (currentMoveIndex > -1) {
-                selectMove(currentMoveIndex - 1);
-            }
-        }
-
-        function moveFirst() {
-            resetPosition();
-        }
-
-        function moveLast() {
-            selectMove(moves.length - 1);
-        }
-
-        function loadComments() {
-            if (!currentGameId || currentMoveIndex === null) {
-                document.getElementById('evaluation-display').textContent = '';
-                document.getElementById('comment-text').textContent = '';
-                return;
-            }
-            
-            fetch(`/get-comments/${currentGameId}`)
-            .then(response => response.json())
-            .then(comments => {
-                const moveComments = comments[currentMoveIndex] || {};
-                document.getElementById('evaluation-display').textContent = moveComments.evaluation || '';
-                document.getElementById('comment-text').textContent = moveComments.comment || '';
-            })
-            .catch(error => {
-                console.error('Fehler beim Laden der Kommentare:', error);
-            });
-        }
-
-        // Host-Status
-        let isHost = false;
-
-        // Prüfe Host-Status beim Laden
-        fetch('/check-host')
-            .then(response => response.json())
-            .then(data => {
-                isHost = data.is_host;
-                document.getElementById('host-panel').style.display = isHost ? 'block' : 'none';
-            })
-            .catch(error => console.error('Error checking host status:', error));
-
-        function saveComment() {
-            if (!isHost || !currentGameId || currentMoveIndex < 0) return;
-
-            const evaluation = document.getElementById('evaluation-input').value;
-            const comment = document.getElementById('comment-input').value;
-            const statusElement = document.getElementById('host-status');
-            
-            statusElement.textContent = 'Speichere...';
-            
-            fetch('/save-comment', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({
-                    game_id: currentGameId,
-                    move_number: currentMoveIndex,
-                    evaluation: evaluation,
-                    comment: comment
-                })
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.error) {
-                    throw new Error(data.error);
-                }
-                statusElement.textContent = 'Gespeichert!';
-                setTimeout(() => {
-                    statusElement.textContent = '';
-                }, 2000);
-                
-                // Aktualisiere die Anzeige
-                document.getElementById('evaluation-display').textContent = evaluation;
-                document.getElementById('comment-text').textContent = comment;
-            })
-            .catch(error => {
-                console.error('Error saving comment:', error);
-                statusElement.textContent = `Fehler: ${error.message}`;
-            });
+            updateMoveList();
         }
 
         function loadComments() {
@@ -553,21 +388,9 @@
                     if (data.comment) {
                         document.getElementById('evaluation-display').textContent = data.comment.evaluation || '';
                         document.getElementById('comment-text').textContent = data.comment.text || '';
-                        
-                        // Fülle Host-Felder wenn Host
-                        if (isHost) {
-                            document.getElementById('evaluation-input').value = data.comment.evaluation || '';
-                            document.getElementById('comment-input').value = data.comment.text || '';
-                        }
                     } else {
                         document.getElementById('evaluation-display').textContent = '';
                         document.getElementById('comment-text').textContent = '';
-                        
-                        // Leere Host-Felder wenn Host
-                        if (isHost) {
-                            document.getElementById('evaluation-input').value = '';
-                            document.getElementById('comment-input').value = '';
-                        }
                     }
                 })
                 .catch(error => {
