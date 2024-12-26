@@ -412,7 +412,14 @@
             
             board.position(game.fen());
             currentMoveIndex = index;
-            updateMoveList();
+            
+            // Nur den aktuellen Zug markieren, NICHT die ganze Notation neu aufbauen
+            document.querySelectorAll('.current-move').forEach(el => el.classList.remove('current-move'));
+            const moveElements = document.querySelectorAll('.move');
+            if (moveElements[index]) {
+                moveElements[index].classList.add('current-move');
+            }
+            
             loadComments();
         }
 
