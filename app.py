@@ -76,6 +76,7 @@ current_broadcast = None
 
 @app.route('/import-broadcast', methods=['POST'])
 def import_broadcast():
+    global current_broadcast
     data = request.get_json()
     url = data.get('broadcast_round_id', '')
     
@@ -126,7 +127,6 @@ def import_broadcast():
         
         # Wenn Host, setze den aktuellen Broadcast
         if session.get('is_host', False):
-            global current_broadcast
             current_broadcast = broadcast_id
         
         pgn_content = response.text
