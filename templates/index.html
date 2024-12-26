@@ -54,17 +54,28 @@
             max-width: 1000px;
             margin: 0 auto;
         }
-        #board {
-            max-width: 500px;
+        /* Board Container mit fester Größe */
+        .board-container {
+            width: 500px;
+            height: 500px;
+            position: relative;
+            overflow: hidden;
             margin: 0 auto;
         }
-        .move-list {
-            height: 400px;
-            overflow-y: auto;
-            border: 1px solid #ddd;
-            padding: 10px;
-            margin-top: 0;
-            background: white;
+        /* Brett auf Container-Größe fixieren */
+        #board {
+            width: 100%;
+            height: 100%;
+            position: relative;
+        }
+        /* Figuren innerhalb des Bretts halten */
+        #board .square-55d63 {
+            overflow: hidden;
+        }
+        #board img {
+            max-width: 100%;
+            height: auto;
+            position: relative;
         }
         .board-container {
             margin-bottom: 10px;
