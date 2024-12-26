@@ -333,10 +333,27 @@
         let currentPage = 0;
         const gamesPerPage = 4;
 
+        // Cleanup-Funktion für doppelte Figuren
+        function cleanupBoard() {
+            const squares = document.querySelectorAll('.square-55d63');
+            squares.forEach(square => {
+                const images = square.querySelectorAll('img');
+                if (images.length > 1) {
+                    // Behalte nur die letzte Figur
+                    for (let i = 0; i < images.length - 1; i++) {
+                        images[i].remove();
+                    }
+                }
+            });
+        }
+
         // Brett initialisieren
         board = Chessboard('board', {
             position: 'start',
-            pieceTheme: 'https://chessboardjs.com/img/chesspieces/wikipedia/{piece}.png'
+            pieceTheme: 'https://chessboardjs.com/img/chesspieces/wikipedia/{piece}.png',
+            onChange: function() {
+                setTimeout(cleanupBoard, 0);
+            }
         });
 
         function updateGameSelector() {
