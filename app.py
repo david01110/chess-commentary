@@ -71,10 +71,21 @@ def host():
         return redirect(url_for('login'))
     return render_template('host.html')
 
+# Globale Variable für den aktuellen Broadcast
+current_broadcast = None
+
 @app.route('/import-broadcast', methods=['POST'])
 def import_broadcast():
     data = request.get_json()
     url = data.get('broadcast_round_id', '')
+    
+    # Nur Host darf neue Broadcasts importieren
+    if not session.get('is_host', False) and not current_broadcast:
+        return jsonify({'error': 'Nicht autorisiert'}), 403
+
+    # Wenn kein Host, nur den aktuellen Broadcast laden
+    if not session.get('is_host', False):
+        url = current_broadcast
     
     # Extrahiere die Broadcast-IDs aus der URL
     selected_game_id = None
@@ -84,22 +95,20 @@ def import_broadcast():
         round_id = None
         for i in range(len(parts)-1):
             if parts[i] == 'broadcast':
-                # Suche nach den IDs nach dem Broadcast-Teil
                 for j in range(i+1, len(parts)):
-                    if len(parts[j]) >= 8 and parts[j].isalnum():  # IDs sind normalerweise 8+ Zeichen lang
+                    if len(parts[j]) >= 8 and parts[j].isalnum():
                         if not tour_id:
                             tour_id = parts[j]
                         elif not round_id:
                             round_id = parts[j]
                         else:
-                            selected_game_id = parts[j]  # Das letzte ID-Segment ist die Game-ID
+                            selected_game_id = parts[j]
                             break
         if tour_id:
             broadcast_id = tour_id
             if round_id:
                 broadcast_id = f"{tour_id}/{round_id}"
     else:
-        # Wenn keine URL, behandle Input als direkte ID
         broadcast_id = url
     
     if not broadcast_id:
@@ -115,8 +124,13 @@ def import_broadcast():
             if response.status_code != 200:
                 return jsonify({'error': f'Broadcast nicht gefunden (Status: {response.status_code})'})
         
+        # Wenn Host, setze den aktuellen Broadcast
+        if session.get('is_host', False):
+            global current_broadcast
+            current_broadcast = broadcast_id
+        
         pgn_content = response.text
-        print(f"Received PGN content: {pgn_content[:200]}...")  # Debug-Ausgabe
+        print(f"Received PGN content: {pgn_content[:200]}...")
         games = []
         
         # Verarbeite jede Partie im PGN
@@ -197,6 +211,10 @@ def import_broadcast():
     except Exception as e:
         print(f"Error importing broadcast: {str(e)}")
         return jsonify({'error': str(e)})
+
+@app.route('/get-current-broadcast')
+def get_current_broadcast():
+    return jsonify({'broadcast_id': current_broadcast})
 
 @app.route('/check-host')
 def check_host():
