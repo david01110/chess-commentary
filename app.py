@@ -32,10 +32,11 @@ class Game(db.Model):
 
 class Comment(db.Model):
     id = db.Column(db.Integer, primary_key=True)
-    game_id = db.Column(db.String(100), db.ForeignKey('game.id'))
-    move_number = db.Column(db.Integer)
-    comment_text = db.Column(db.Text)
+    game_id = db.Column(db.String(50), nullable=False)
+    move_number = db.Column(db.Integer, nullable=False)
     evaluation = db.Column(db.String(50))
+    annotation = db.Column(db.String(2))  # Für !, !!, ?, ??, !?, ?!
+    comment_text = db.Column(db.Text)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
 with app.app_context():
@@ -223,14 +224,15 @@ def check_host():
 @app.route('/save-comment', methods=['POST'])
 def save_comment():
     if not session.get('is_host', False):
-        return jsonify({'error': 'Nur Hosts können Kommentare speichern'}), 403
-        
+        return jsonify({'error': 'Unauthorized'}), 401
+
     data = request.get_json()
     game_id = data.get('game_id')
     move_number = data.get('move_number')
     evaluation = data.get('evaluation')
+    annotation = data.get('annotation')
     comment_text = data.get('comment')
-    
+
     if not all([game_id, isinstance(move_number, int), move_number >= 0]):
         return jsonify({'error': 'Ungültige Eingabedaten'}), 400
         
@@ -239,19 +241,21 @@ def save_comment():
         game_id=game_id,
         move_number=move_number
     ).first()
-    
+
     if comment:
         comment.evaluation = evaluation
+        comment.annotation = annotation
         comment.comment_text = comment_text
     else:
         comment = Comment(
             game_id=game_id,
             move_number=move_number,
             evaluation=evaluation,
+            annotation=annotation,
             comment_text=comment_text
         )
         db.session.add(comment)
-    
+
     try:
         db.session.commit()
         return jsonify({'success': True})
@@ -281,6 +285,7 @@ def get_comment():
         return jsonify({
             'comment': {
                 'evaluation': comment.evaluation,
+                'annotation': comment.annotation,
                 'text': comment.comment_text
             }
         })
@@ -293,7 +298,8 @@ def get_comments(game_id):
     return jsonify({
         comment.move_number: {
             'comment': comment.comment_text,
-            'evaluation': comment.evaluation
+            'evaluation': comment.evaluation,
+            'annotation': comment.annotation
         }
         for comment in comments
     })

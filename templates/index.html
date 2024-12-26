@@ -313,19 +313,29 @@
                 moveNumberSpan.className = 'move-number';
                 moveNumberSpan.textContent = moveNumber + '.';
                 moveRow.appendChild(moveNumberSpan);
+
+                // Weißer Zug mit möglicher Annotation
+                fetch(`/get-comment?game_id=${currentGameId}&move_number=${i}`)
+                    .then(response => response.json())
+                    .then(data => {
+                        const whiteMoveSpan = document.createElement('span');
+                        whiteMoveSpan.className = `move ${i === currentMoveIndex ? 'current-move' : ''}`;
+                        whiteMoveSpan.textContent = whiteMove + (data.comment?.annotation || '');
+                        whiteMoveSpan.onclick = () => makeMove(i);
+                        moveRow.appendChild(whiteMoveSpan);
+                    });
                 
-                const whiteMoveSpan = document.createElement('span');
-                whiteMoveSpan.className = `move ${i === currentMoveIndex ? 'current-move' : ''}`;
-                whiteMoveSpan.textContent = whiteMove;
-                whiteMoveSpan.onclick = () => makeMove(i);
-                moveRow.appendChild(whiteMoveSpan);
-                
+                // Schwarzer Zug mit möglicher Annotation
                 if (blackMove) {
-                    const blackMoveSpan = document.createElement('span');
-                    blackMoveSpan.className = `move ${i + 1 === currentMoveIndex ? 'current-move' : ''}`;
-                    blackMoveSpan.textContent = blackMove;
-                    blackMoveSpan.onclick = () => makeMove(i + 1);
-                    moveRow.appendChild(blackMoveSpan);
+                    fetch(`/get-comment?game_id=${currentGameId}&move_number=${i+1}`)
+                        .then(response => response.json())
+                        .then(data => {
+                            const blackMoveSpan = document.createElement('span');
+                            blackMoveSpan.className = `move ${i + 1 === currentMoveIndex ? 'current-move' : ''}`;
+                            blackMoveSpan.textContent = blackMove + (data.comment?.annotation || '');
+                            blackMoveSpan.onclick = () => makeMove(i + 1);
+                            moveRow.appendChild(blackMoveSpan);
+                        });
                 }
                 
                 moveList.appendChild(moveRow);

@@ -136,6 +136,21 @@
             margin-bottom: 10px;
             align-items: center;
         }
+        .host-controls select {
+            width: 200px;
+            padding: 5px;
+            border: 1px solid #ced4da;
+            border-radius: 4px;
+        }
+        .notation-symbols {
+            margin-left: 20px;
+        }
+        .notation-symbols label {
+            margin-right: 10px;
+        }
+        .notation-symbols select {
+            width: 100px;
+        }
         .evaluation-input {
             width: 80px;
             text-align: center;
@@ -225,11 +240,33 @@
         <div class="game-selector" id="game-selector"></div>
 
         <!-- Host Interface -->
-        <div class="host-panel">
+        <div class="host-panel" id="host-panel">
             <div class="host-controls">
                 <div>
-                    <label for="evaluation-input">Bewertung:</label>
-                    <input type="text" id="evaluation-input" class="evaluation-input" placeholder="+0.5">
+                    <label for="evaluation-input">Position:</label>
+                    <select id="evaluation-input" class="form-select">
+                        <option value="">Keine Bewertung</option>
+                        <option value="Weiß besser">Weiß besser</option>
+                        <option value="Weiß klar besser">Weiß klar besser</option>
+                        <option value="Weiß auf Gewinn">Weiß auf Gewinn</option>
+                        <option value="Ausgeglichen">Ausgeglichen</option>
+                        <option value="unklar">unklar</option>
+                        <option value="Schwarz besser">Schwarz besser</option>
+                        <option value="Schwarz klar besser">Schwarz klar besser</option>
+                        <option value="Schwarz auf Gewinn">Schwarz auf Gewinn</option>
+                    </select>
+                </div>
+                <div class="notation-symbols">
+                    <label>Zugbewertung:</label>
+                    <select id="move-annotation" class="form-select">
+                        <option value="">Keine</option>
+                        <option value="!">! (Guter Zug)</option>
+                        <option value="!!">!! (Sehr guter Zug)</option>
+                        <option value="?">? (Schwacher Zug)</option>
+                        <option value="??">?? (Grober Fehler)</option>
+                        <option value="!?">!? (Interessanter Zug)</option>
+                        <option value="?!">?! (Zweifelhafter Zug)</option>
+                    </select>
                 </div>
                 <button class="save-button" onclick="saveComment()">Speichern</button>
             </div>
@@ -376,19 +413,29 @@
                 moveNumberSpan.className = 'move-number';
                 moveNumberSpan.textContent = moveNumber + '.';
                 moveRow.appendChild(moveNumberSpan);
+
+                // Weißer Zug mit möglicher Annotation
+                fetch(`/get-comment?game_id=${currentGameId}&move_number=${i}`)
+                    .then(response => response.json())
+                    .then(data => {
+                        const whiteMoveSpan = document.createElement('span');
+                        whiteMoveSpan.className = `move ${i === currentMoveIndex ? 'current-move' : ''}`;
+                        whiteMoveSpan.textContent = whiteMove + (data.comment?.annotation || '');
+                        whiteMoveSpan.onclick = () => makeMove(i);
+                        moveRow.appendChild(whiteMoveSpan);
+                    });
                 
-                const whiteMoveSpan = document.createElement('span');
-                whiteMoveSpan.className = `move ${i === currentMoveIndex ? 'current-move' : ''}`;
-                whiteMoveSpan.textContent = whiteMove;
-                whiteMoveSpan.onclick = () => makeMove(i);
-                moveRow.appendChild(whiteMoveSpan);
-                
+                // Schwarzer Zug mit möglicher Annotation
                 if (blackMove) {
-                    const blackMoveSpan = document.createElement('span');
-                    blackMoveSpan.className = `move ${i + 1 === currentMoveIndex ? 'current-move' : ''}`;
-                    blackMoveSpan.textContent = blackMove;
-                    blackMoveSpan.onclick = () => makeMove(i + 1);
-                    moveRow.appendChild(blackMoveSpan);
+                    fetch(`/get-comment?game_id=${currentGameId}&move_number=${i+1}`)
+                        .then(response => response.json())
+                        .then(data => {
+                            const blackMoveSpan = document.createElement('span');
+                            blackMoveSpan.className = `move ${i + 1 === currentMoveIndex ? 'current-move' : ''}`;
+                            blackMoveSpan.textContent = blackMove + (data.comment?.annotation || '');
+                            blackMoveSpan.onclick = () => makeMove(i + 1);
+                            moveRow.appendChild(blackMoveSpan);
+                        });
                 }
                 
                 moveList.appendChild(moveRow);
@@ -446,6 +493,7 @@
             if (!currentGameId || currentMoveIndex < 0) return;
 
             const evaluation = document.getElementById('evaluation-input').value;
+            const annotation = document.getElementById('move-annotation').value;
             const comment = document.getElementById('comment-input').value;
             const statusElement = document.getElementById('host-status');
             
@@ -460,6 +508,7 @@
                     game_id: currentGameId,
                     move_number: currentMoveIndex,
                     evaluation: evaluation,
+                    annotation: annotation,
                     comment: comment
                 })
             })
@@ -495,6 +544,7 @@
                         
                         // Fülle Host-Felder
                         document.getElementById('evaluation-input').value = data.comment.evaluation || '';
+                        document.getElementById('move-annotation').value = data.comment.annotation || '';
                         document.getElementById('comment-input').value = data.comment.text || '';
                     } else {
                         document.getElementById('evaluation-display').textContent = '';
@@ -502,6 +552,7 @@
                         
                         // Leere Host-Felder
                         document.getElementById('evaluation-input').value = '';
+                        document.getElementById('move-annotation').value = '';
                         document.getElementById('comment-input').value = '';
                     }
                 })
