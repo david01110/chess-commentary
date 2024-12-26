@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Schach-Kommentierung</title>
+    <link rel="stylesheet" href="style.css">
+    <script src="script.js"></script>
+
+    <style>
+        body { font-family: Arial, sans-serif; margin: 0; padding: 0; background-color: #f4f4f4; }
+        #app { display: flex; max-width: 900px; margin: 20px auto; }
+        #board { flex: 1; margin-right: 20px; }
+        #controls { flex: 1; }
+        #notation { max-height: 300px; overflow-y: auto; border: 1px solid #ccc; padding: 10px; background: white; }
+        .comment { margin-top: 10px; }
+    </style>
+</head>
+<body>
+    <div id="app">
+        <div id="board"></div>
+        <div id="controls">
+            <h2>Notation</h2>
+            <div id="notation"></div>
+            <div class="comment">
+                <h3>Kommentar:</h3>
+                <textarea id="comment" rows="5" style="width: 100%;"></textarea>
+                <button onclick="saveComment()">Kommentar speichern</button>
+            </div>
+            <div class="comment">
+                <h3>Bewertung:</h3>
+                <input type="number" id="evaluation" placeholder="z. B. +1.2 (Vorteil Weiß)" style="width: 100%;">
+                <button onclick="saveEvaluation()">Bewertung speichern</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
