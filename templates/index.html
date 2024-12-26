@@ -249,12 +249,12 @@
         <div class="host-panel" id="host-panel" style="display: none;">
             <div class="host-controls">
                 <div>
-                    <label for="evaluation">Bewertung:</label>
-                    <input type="text" id="evaluation" class="evaluation-input" placeholder="+0.5">
+                    <label for="evaluation-input">Bewertung:</label>
+                    <input type="text" id="evaluation-input" class="evaluation-input" placeholder="+0.5">
                 </div>
                 <button class="save-button" onclick="saveComment()">Speichern</button>
             </div>
-            <textarea id="comment" class="comment-input" placeholder="Kommentar eingeben..."></textarea>
+            <textarea id="comment-input" class="comment-input" placeholder="Kommentar eingeben..."></textarea>
             <div id="host-status" class="host-status"></div>
         </div>
     </div>
@@ -506,8 +506,8 @@
         function saveComment() {
             if (!isHost || !currentGameId || currentMoveIndex < 0) return;
 
-            const evaluation = document.getElementById('evaluation').value;
-            const comment = document.getElementById('comment').value;
+            const evaluation = document.getElementById('evaluation-input').value;
+            const comment = document.getElementById('comment-input').value;
             const statusElement = document.getElementById('host-status');
             
             statusElement.textContent = 'Speichere...';
@@ -556,8 +556,8 @@
                         
                         // Fülle Host-Felder wenn Host
                         if (isHost) {
-                            document.getElementById('evaluation').value = data.comment.evaluation || '';
-                            document.getElementById('comment').value = data.comment.text || '';
+                            document.getElementById('evaluation-input').value = data.comment.evaluation || '';
+                            document.getElementById('comment-input').value = data.comment.text || '';
                         }
                     } else {
                         document.getElementById('evaluation-display').textContent = '';
@@ -565,8 +565,8 @@
                         
                         // Leere Host-Felder wenn Host
                         if (isHost) {
-                            document.getElementById('evaluation').value = '';
-                            document.getElementById('comment').value = '';
+                            document.getElementById('evaluation-input').value = '';
+                            document.getElementById('comment-input').value = '';
                         }
                     }
                 })
