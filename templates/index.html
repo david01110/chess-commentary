@@ -225,10 +225,27 @@
         let currentPage = 0;
         const gamesPerPage = 4;
 
+        // Cleanup-Funktion für doppelte Figuren
+        function cleanupBoard() {
+            const squares = document.querySelectorAll('.square-55d63');
+            squares.forEach(square => {
+                const images = square.querySelectorAll('img');
+                if (images.length > 1) {
+                    // Behalte nur die letzte Figur
+                    for (let i = 0; i < images.length - 1; i++) {
+                        images[i].remove();
+                    }
+                }
+            });
+        }
+
         // Brett initialisieren
         board = Chessboard('board', {
             position: 'start',
-            pieceTheme: 'https://chessboardjs.com/img/chesspieces/wikipedia/{piece}.png'
+            pieceTheme: 'https://chessboardjs.com/img/chesspieces/wikipedia/{piece}.png',
+            onChange: function() {
+                setTimeout(cleanupBoard, 0);
+            }
         });
 
         // Lade den aktuellen Broadcast beim Start
@@ -412,19 +429,27 @@
         function makeMove(index) {
             if (index < -1 || index >= moves.length) return;
             
-            // Reset bis zum Anfang
-            game.reset();
-            board.position(game.fen());
-            
-            // Spiele alle Züge bis zum gewählten Index
-            for (let i = 0; i <= index; i++) {
-                game.move(moves[i]);
+            // Wenn wir zum Anfang gehen
+            if (index === -1) {
+                game.reset();
+                board.position(game.fen());
+            }
+            // Wenn wir einen Zug zurück gehen
+            else if (index < currentMoveIndex) {
+                // Gehe zum vorherigen Zug
+                game.undo();
+                board.position(game.fen());
+            }
+            // Wenn wir einen Zug vorwärts gehen
+            else if (index > currentMoveIndex) {
+                // Mache nur den nächsten Zug
+                game.move(moves[index]);
+                board.position(game.fen());
             }
             
-            board.position(game.fen());
             currentMoveIndex = index;
             
-            // Nur den aktuellen Zug markieren, NICHT die ganze Notation neu aufbauen
+            // Nur den aktuellen Zug markieren
             document.querySelectorAll('.current-move').forEach(el => el.classList.remove('current-move'));
             const moveElements = document.querySelectorAll('.move');
             if (moveElements[index]) {
