@@ -505,19 +505,31 @@
         function makeMove(index) {
             if (index < -1 || index >= moves.length) return;
             
-            // Reset bis zum Anfang
-            game.reset();
-            board.position(game.fen());
-            
-            // Spiele alle Züge bis zum gewählten Index
-            for (let i = 0; i <= index; i++) {
-                game.move(moves[i]);
+            // Wenn wir zum Anfang gehen
+            if (index === -1) {
+                game.reset();
+                board.position(game.fen(), false);
+            }
+            // Wenn wir einen Zug zurück gehen
+            else if (index < currentMoveIndex) {
+                game.undo();
+                board.position(game.fen(), false);
+            }
+            // Wenn wir einen Zug vorwärts gehen
+            else if (index > currentMoveIndex) {
+                // Mache nur den nächsten Zug
+                const move = game.move(moves[index]);
+                if (move) {
+                    // Bewege nur die betroffenen Figuren
+                    const from = move.from;
+                    const to = move.to;
+                    board.move(`${from}-${to}`);
+                }
             }
             
-            board.position(game.fen());
             currentMoveIndex = index;
             
-            // Nur den aktuellen Zug markieren, NICHT die ganze Notation neu aufbauen
+            // Nur den aktuellen Zug markieren
             document.querySelectorAll('.current-move').forEach(el => el.classList.remove('current-move'));
             const moveElements = document.querySelectorAll('.move');
             if (moveElements[index]) {
